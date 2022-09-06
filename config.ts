@@ -1,13 +1,3 @@
-// 生成的模板
-// const template = `
-// /**
-//  * @author ${author}
-//  * @date ${date}
-//  * @description ${description}
-//  */
-// const
-// `;
-
 export const config = {
   /** 生成链接 */
   url: 'http://127.0.0.1:4523/export/openapi?projectId=1350572&specialPurpose=openapi-generator',
