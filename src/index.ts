@@ -1,7 +1,7 @@
 import { config } from '../config';
 import { get } from 'http';
 import { appendFileSync, mkdirSync, writeFileSync } from 'fs';
-import { generateApi, generateParameType } from './utils';
+import { generateApi, generateApiType, generateParameType } from './utils';
 
 get(config.url, (res) => {
   let rawData = '';
@@ -45,11 +45,8 @@ get(config.url, (res) => {
 
         // 接口类型
         const apiType =
-          api[method].responses['200'].content[
-            'application/json'
-          ].schema.$ref?.split('/');
-        const apiTypeName = apiType[apiType.length - 1];
-
+          api[method]?.requestBody?.content['application/json']?.schema.$ref;
+        const apiTypeName = apiType?.split('/')?.pop();
         // 参数类型
         const parameters = api[method].parameters;
         const queryParame = generateParameType(parameters, apiTypeName);
@@ -62,15 +59,24 @@ get(config.url, (res) => {
       });
       console.log('API文件生成结束...');
 
-      console.log('开始API类型文件...');
+      console.log('开始生成api.d.ts文件...');
       // 生成类型文件
-      // 生成API文件
-      Object.keys(data.components.schemas).forEach((key) => {
-        // 开始生成API
-        // appendFileSync(`${config.outDir}/api.d.ts`,{});
-      });
 
-      console.log('API生成完成');
+      // 生成api.d.ts文件
+      appendFileSync(`${config.outDir}/api.d.ts`, 'declare namespace API {\n');
+      Object.keys(data.components.schemas).forEach((key) => {
+        const dto = data.components.schemas[key];
+        // 开始生成API
+        appendFileSync(
+          `${config.outDir}/api.d.ts`,
+          generateApiType(dto.properties || {}, key)
+        );
+      });
+      appendFileSync(`${config.outDir}/api.d.ts`, '}');
+
+      console.log('api.d.ts文件生成完成');
+
+      console.log('文件生成结束...😆');
     } catch (error) {
       console.error(`错误：${error.message}`);
     }
