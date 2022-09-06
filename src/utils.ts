@@ -9,6 +9,7 @@ const firstUpperCase = (str: string) => {
 export const generateApi = (
   notes: string,
   apiName: string,
+  queryParame: string,
   path: string,
   method: string
 ) => {
@@ -19,13 +20,40 @@ export const generateApi = (
   const apiParam = method === 'get' || method === 'delete' ? 'params' : 'data';
 
   return `\n\n/** ${notes} */
-export const ${firstUpperCase(apiName)} = async (${apiParam}) => {
+export const ${firstUpperCase(apiName)}API = async (${apiParam}: ${
+    queryParame.includes('{') ? queryParame : 'API.' + queryParame
+  }) => {
   return request({
     method: '${method.toUpperCase()}',
     url: '${path}',
     ${apiParam},
   });
 };`;
+};
+
+// 判断字段类型
+const judgmentType = (type: string) => {
+  switch (type) {
+    case 'integer' || 'int64' || 'int32':
+      return 'number';
+    default:
+      return type;
+  }
+};
+
+// 生成参数类型对象
+export const generateParameType = (parameters: any[], apiTypeName: string) => {
+  let parames = [];
+  parameters.forEach((item) => {
+    let type = judgmentType(item.schema.type);
+    parames.push(
+      `/** 
+  * @param {${type}} ${item.name} - ${item.description || '暂无说明'}
+  */ \n ${item.name}${!item.required && '?'}: ${type}\n`
+    );
+  });
+  // 如果是GET请求，优先使用
+  return parames.length ? `{\n ${parames.join(',')}}` : apiTypeName;
 };
 
 // 生成API函数

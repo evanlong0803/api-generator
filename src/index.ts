@@ -1,7 +1,7 @@
 import { config } from '../config';
 import { get } from 'http';
 import { appendFileSync, mkdirSync, writeFileSync } from 'fs';
-import { generateApi } from './utils';
+import { generateApi, generateParameType } from './utils';
 
 get(config.url, (res) => {
   let rawData = '';
@@ -29,19 +29,35 @@ get(config.url, (res) => {
       // 生成API文件
       Object.keys(data.paths).forEach((path) => {
         const fileName = path.split('/');
+        const api = data.paths[path];
+
         // 目录名称
         const apiDirName = fileName[2];
+
         // API函数名称
         const apiFunctionName = fileName[3];
+
         // 请求类型
         const method = Object.keys(data.paths[path])[0];
+
         // 接口注释
-        const note = data.paths[path][method]['summary'];
+        const note = api[method]['summary'];
+
+        // 接口类型
+        const apiType =
+          api[method].responses['200'].content[
+            'application/json'
+          ].schema.$ref?.split('/');
+        const apiTypeName = apiType[apiType.length - 1];
+
+        // 参数类型
+        const parameters = api[method].parameters;
+        const queryParame = generateParameType(parameters, apiTypeName);
 
         // 开始生成API
         appendFileSync(
           `${config.outDir}/${apiDirName}/index.ts`,
-          generateApi(note, apiFunctionName, path, method)
+          generateApi(note, apiFunctionName, queryParame, path, method)
         );
       });
       console.log('API文件生成结束...');
