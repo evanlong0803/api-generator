@@ -6,5 +6,5 @@ export const config = {
   /** api类型文件名称 */
   outTypeFile: 'api.d.ts',
   /** 引入axios */
-  utilImport: "import request from '@/utils/request';",
+  utilImport: `import request from '@/utils/request';\nimport type { AxiosRequestConfig } from 'axios';`,
 };

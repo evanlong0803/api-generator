@@ -16,12 +16,6 @@ export const generateApi = (
    * 判断get和delete
    * 注意：只有get和delete为params对象，其他都为data对象
    */
-  const apiParamName =
-    method === 'get' || method === 'delete' ? 'params' : 'data';
-  /**
-   * 判断get和delete
-   * 注意：只有get和delete为params对象，其他都为data对象
-   */
   // 判断查询字符串对象是否为空对象
   const isNullObj = requestQueryStringType.includes('/**');
 
@@ -35,7 +29,7 @@ export const generateApi = (
     ? `data: API.${requestBodyType}, `
     : '';
 
-  const apiParamObjs = `${requestQueryStringTypeObj}${requestBodyTypeObj}config: AxiosRequestConfig`;
+  const apiParamObjs = `${requestQueryStringTypeObj}${requestBodyTypeObj}config?: AxiosRequestConfig`;
 
   return `\n\n/** ${note} */
 export const ${firstUpperCase(apiName)}API = async (${apiParamObjs}) => {
