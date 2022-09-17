@@ -4,7 +4,7 @@ import { appendFileSync, mkdirSync, writeFileSync } from 'fs';
 import {
   generateApi,
   generateApiType,
-  generateParameType,
+  generateQueryStringType,
   generateUploadParameType,
 } from './utils';
 
@@ -13,7 +13,7 @@ get(config.url, (res) => {
   res.on('data', (chunk) => {
     rawData += chunk;
   });
-  return res.on('end', () => {
+  res.on('end', () => {
     try {
       const data = JSON.parse(rawData);
       // 创建API目录
@@ -48,31 +48,38 @@ get(config.url, (res) => {
         // 目录名称
         const apiDirName = api[method]['x-apifox-folder'];
 
-        // 接口类型
-        const apiType =
-          api[method]?.requestBody?.content['application/json']?.schema.$ref;
-
-        const apiTypeName = apiType?.split('/')?.pop();
-        // 参数类型
+        // queryString参数（不管是GET还是POST请求都有queryString参数）
         const parameters = api[method].parameters;
+        const requestQueryStringType = generateQueryStringType(parameters);
+
+        // body参数体（除了GET、DELETE请求以外，都会有body参数）
+        const requestBodyContent =
+          api[method]?.requestBody?.content['application/json']?.schema.$ref;
+        const requestBodyType = requestBodyContent?.split('/')?.pop();
+
         // 特殊处理：上传接口
-        const properties =
-          api[method]?.requestBody?.content['multipart/form-data']?.schema
-            .properties;
+        // const properties =
+        //   api[method]?.requestBody?.content['multipart/form-data']?.schema
+        //     .properties;
 
-        const queryParame = generateParameType(parameters);
+        // const uploadParame = generateUploadParameType(properties);
 
-        const uploadParame = generateUploadParameType(properties);
-
-        // 判断是上传还是其他接口
-        const parames = api[method]?.requestBody?.content['application/json']
-          ? queryParame
-          : uploadParame;
+        // // 判断是上传还是其他接口
+        // const parames = api[method]?.requestBody?.content['application/json']
+        //   ? requestQueryStringType
+        //   : uploadParame;
 
         // 开始生成API
         appendFileSync(
           `${config.outDir}/${apiDirName}/index.ts`,
-          generateApi(note, apiFunctionName, parames, apiTypeName, path, method)
+          generateApi(
+            note,
+            apiFunctionName,
+            requestQueryStringType,
+            requestBodyType,
+            path,
+            method
+          )
         );
       });
       console.log('API文件生成结束...');

@@ -7,8 +7,8 @@ const firstUpperCase = (str: string) => {
 export const generateApi = (
   note: string,
   apiName: string,
-  queryParame: string,
-  apiTypeName: string,
+  requestQueryStringType: string,
+  requestBodyType: string,
   path: string,
   method: string
 ) => {
@@ -22,23 +22,28 @@ export const generateApi = (
    * 判断get和delete
    * 注意：只有get和delete为params对象，其他都为data对象
    */
-  // 判断是否为空对象
-  const isNullObj = queryParame.includes('/**');
+  // 判断查询字符串对象是否为空对象
+  const isNullObj = requestQueryStringType.includes('/**');
 
-  const requestData = `${apiParamName}: ${
-    apiTypeName ? `API.${apiTypeName}` : queryParame
-  }`;
-  const apiParams =
-    isNullObj || apiTypeName
-      ? `${requestData}, config: AxiosRequestConfig`
-      : 'config: AxiosRequestConfig';
+  // 查询字符串类型对象
+  const requestQueryStringTypeObj = isNullObj
+    ? `params: ${requestQueryStringType}, `
+    : '';
+
+  // Body参数类型对象
+  const requestBodyTypeObj = requestBodyType
+    ? `data: API.${requestBodyType}, `
+    : '';
+
+  const apiParamObjs = `${requestQueryStringTypeObj}${requestBodyTypeObj}config: AxiosRequestConfig`;
 
   return `\n\n/** ${note} */
-export const ${firstUpperCase(apiName)}API = async (${apiParams}) => {
+export const ${firstUpperCase(apiName)}API = async (${apiParamObjs}) => {
   return request({
     method: '${method.toUpperCase()}',
     url: '${path}',
-    ${isNullObj || apiTypeName ? `${apiParamName},` : ''}
+    ${isNullObj ? `params,` : ''}
+    ${requestBodyType ? `data,` : ''}
     ...config,
   });
 };`;
@@ -58,8 +63,8 @@ const judgmentType = (type: string, itemType?: string) => {
   }
 };
 
-// 生成接口参数类型对象
-export const generateParameType = (parameters: any[]) => {
+// 生成接口queryString参数类型对象
+export const generateQueryStringType = (parameters: any[]) => {
   let parames = [];
   parameters.forEach((item) => {
     let type = judgmentType(item.schema.type);
