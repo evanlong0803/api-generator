@@ -4,8 +4,6 @@ export const config = {
   /** 生成目录位置 */
   outDir: 'src/api',
   /** api类型文件名称 */
-  outTypeDir: './src/types',
-  /** api类型文件名称 */
   outTypeFile: 'api.d.ts',
   /** 引入axios */
   utilImport: "import request from '@/utils/request';",
