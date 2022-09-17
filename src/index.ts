@@ -1,7 +1,12 @@
 import { config } from '../config';
 import { get } from 'http';
 import { appendFileSync, mkdirSync, writeFileSync } from 'fs';
-import { generateApi, generateApiType, generateParameType } from './utils';
+import {
+  generateApi,
+  generateApiType,
+  generateParameType,
+  generateUploadParameType,
+} from './utils';
 
 get(config.url, (res) => {
   let rawData = '';
@@ -31,11 +36,8 @@ get(config.url, (res) => {
         const fileName = path.split('/');
         const api = data.paths[path];
 
-        // 目录名称
-        const apiDirName = fileName[2];
-
         // API函数名称
-        const apiFunctionName = fileName[3];
+        const apiFunctionName = fileName[3] || fileName[2];
 
         // 请求类型
         const method = Object.keys(data.paths[path])[0];
@@ -43,18 +45,34 @@ get(config.url, (res) => {
         // 接口注释
         const note = api[method]['summary'];
 
+        // 目录名称
+        const apiDirName = api[method]['x-apifox-folder'];
+
         // 接口类型
         const apiType =
           api[method]?.requestBody?.content['application/json']?.schema.$ref;
+
         const apiTypeName = apiType?.split('/')?.pop();
         // 参数类型
         const parameters = api[method].parameters;
-        const queryParame = generateParameType(parameters, apiTypeName);
+        // 特殊处理：上传接口
+        const properties =
+          api[method]?.requestBody?.content['multipart/form-data']?.schema
+            .properties;
+
+        const queryParame = generateParameType(parameters);
+
+        const uploadParame = generateUploadParameType(properties);
+
+        // 判断是上传还是其他接口
+        const parames = api[method]?.requestBody?.content['application/json']
+          ? queryParame
+          : uploadParame;
 
         // 开始生成API
         appendFileSync(
           `${config.outDir}/${apiDirName}/index.ts`,
-          generateApi(note, apiFunctionName, queryParame, path, method)
+          generateApi(note, apiFunctionName, parames, apiTypeName, path, method)
         );
       });
       console.log('API文件生成结束...');
@@ -78,7 +96,8 @@ get(config.url, (res) => {
 
       console.log('文件生成结束...😆');
     } catch (error) {
-      console.error(`错误：${error.message}`);
+      console.error(error);
+      // console.error(`错误：${error.message}`);
     }
   });
 });
