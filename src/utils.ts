@@ -50,14 +50,20 @@ export const ${firstUpperCase(apiName)}API = async (${apiParamObjs}) => {
 };
 
 // 判断字段类型
-const judgmentType = (type: string, itemType?: string) => {
+const judgmentType = (
+  type: string,
+  itemType?: string,
+  itemArrType?: string
+) => {
   switch (type) {
     case 'integer' || 'int64' || 'int32':
       return 'number';
     case 'object':
       return 'any';
+    case undefined:
+      return itemType;
     case 'array':
-      return `${itemType ?? 'any'}[]`;
+      return `${itemArrType ? itemArrType : 'any'}[]`;
     default:
       return type;
   }
@@ -97,11 +103,20 @@ export const generateApiType = (properties: any, dtoName: string) => {
   let parames = [];
   Object.keys(properties).forEach((key) => {
     const itemType = properties[key]?.['$ref']?.split('/').pop();
-    let type = judgmentType(properties[key].type, itemType);
+
+    const itemArrType = properties[key].items?.['$ref']?.split('/').pop();
+    let type = judgmentType(
+      properties[key].type instanceof Array
+        ? properties[key].type[0]
+        : properties[key].type,
+      itemType,
+      itemArrType
+    );
+    // console.log(key, properties[key], itemArrType);
     parames.push(`    /**
-     * @param {${type}} ${key} - ${properties.description || '暂无说明'}
+     * @param {${type}} ${key} - ${properties[key].description || '暂无说明'}
      */
-    ${key}${!properties.nullable && '?'}: ${type};
+    ${key}${properties[key].type instanceof Array ? '' : '?'}: ${type};
   `);
   });
   return `  interface ${dtoName} {\n${parames.join('')}}\n\n`;
